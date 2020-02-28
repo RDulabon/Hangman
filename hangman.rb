@@ -8,6 +8,7 @@ class Game
     @guess 
     @blank_word 
     @miss = 0 
+    @guessed = [*("a".."z")].join(" ")
   end 
 
   def choose_word
@@ -16,12 +17,18 @@ class Game
   end
 
   def display_blank 
-    puts @blank_word = "_ " * @hidden_word.length 
+    @blank_word = "_ " * @hidden_word.length 
+    puts "The secret word is: #{@blank_word}"
   end
 
   def guess
-    puts "Enter your guess"
-    @guess = gets.chomp
+    puts " Enter your guess"
+    @guess = gets.chomp.downcase 
+  end
+
+  def guessed_letters
+    @guessed.delete!(@guess) 
+    puts " Letters to guess: #{@guessed}" 
   end
 
   def check_letter
@@ -39,19 +46,35 @@ class Game
   def game_over
     @miss == 6 || @blank_word.gsub(/\s+/,"") == @hidden_word
   end
+  
+  def save_game
+
+  end 
+
+  def load_game
+
+  end 
 
   def play
     choose_word
     display_blank
+    puts " Letters to guess: #{@guessed}"
     until game_over do 
       display(@miss)
       guess
+      guessed_letters 
       update_blanks 
       puts @blank_word 
       @miss += 1 if !@hidden_word.include? @guess 
     end 
-    display(6) if @miss == 6 
-  end
+    if @blank_word.gsub(/\s+/,"") == @hidden_word
+      puts "You guessed the correct word, #{@hidden_word.upcase}! You win!"
+      puts "Flawless victory!" if @miss == 0 
+    else 
+      display(6) 
+      puts "You did not guess the word correctly. The secret word was #{@hidden_word.upcase}. You lose. " 
+    end 
+    end
 
 end
 
@@ -68,7 +91,7 @@ g.play
 6. Repeat 2 - 6 DONE
 7. Notify user of win or loss
  7b. Tell user winning word if they lost 
-8. Display letters guessed
+8. Display letters guessed DONE 
  8b. Allow letter to be guessed only once
 9. Save game
 10. Load existing game 
