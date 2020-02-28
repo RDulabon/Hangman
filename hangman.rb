@@ -1,3 +1,4 @@
+require "json" 
 class Game 
   load "hangman_board.rb" 
   include Board 
@@ -9,11 +10,26 @@ class Game
     @blank_word 
     @miss = 0 
     @guessed = [*("a".."z")].join(" ")
+    @choice 
   end 
 
   def choose_word
     valid_dictionary = @word.select { |line| line if line.chomp.length.between?(5, 12) && line[0] != line[0].upcase }  
     @hidden_word = valid_dictionary[rand(0..valid_dictionary.length-1)].chomp  
+  end
+
+  def welcome
+    puts " Welcome to Hangman!"
+    puts " Would you like to start a New Game (Enter '1') or load a Saved Game (Enter '2')?"
+    @choice = gets.chomp.to_i 
+    if @choice == 1
+      puts " Great! Let's start!"
+    elsif @choice == 2
+      load
+    else 
+      puts " That is an invalid entry. Please try again."
+      welcome 
+    end 
   end
 
   def display_blank 
@@ -22,8 +38,16 @@ class Game
   end
 
   def guess
-    puts " Enter your guess"
+    puts " You can save your game and quit at any time by typing 'save'." 
+    puts " If you'd like to continue, enter your guess:"
     @guess = gets.chomp.downcase 
+    if @guess.length > 1 && @guess != "save"
+      puts " That is an invalid entry. Please try again."
+      guess 
+    elsif @guess == "save"
+      save_game
+      exit 
+    end 
   end
 
   def guessed_letters
@@ -48,14 +72,41 @@ class Game
   end
   
   def save_game
-
+    t = Time.now 
+    Dir.mkdir("saved_games") unless Dir.exists? "saved_games" 
+    filename = "saved_games/game_#{t.month}_#{t.day}_#{t.hour}:#{t.min}.json"
+    File.open(filename, 'w').write(serialize) 
+    puts " Your game has been saved! Goodbye!" 
   end 
 
-  def load_game
+  def serialize
+    obj = {
+      "@hidden_word" => @hidden_word,
+      "@blank_word" => @blank_word, 
+      "@miss" => @miss, 
+      "@guessed" => @guessed, 
+    }
+    JSON.dump obj
+  end
 
+  def saved_games
+    saved_list = []
+    games = Dir.entries("saved_games").each { |g| saved_list << File.basename(g, ".json") } 
+    puts saved_list 
+  end
+
+  def load 
+    puts " Welcome back! Please select one of the games below by typing in the file name."
+    saved_games 
+    load_file = gets.chomp
+    stored_vars = JSON.load File.read("saved_games/#{load_file}.json")
+    stored_vars.keys.each do |key|
+      instance_variable_set(key, stored_vars[key])
+    end 
   end 
 
   def play
+    welcome 
     choose_word
     display_blank
     puts " Letters to guess: #{@guessed}"
@@ -89,10 +140,10 @@ g.play
 4. Identify miss / correct letter DONE
 5. Update board / blanks DONE
 6. Repeat 2 - 6 DONE
-7. Notify user of win or loss
- 7b. Tell user winning word if they lost 
+7. Notify user of win or loss DONE
+ 7b. Tell user winning word if they lost DONE
 8. Display letters guessed DONE 
  8b. Allow letter to be guessed only once
-9. Save game
-10. Load existing game 
+9. Save game DONE
+10. Load existing game DONE
 =end
